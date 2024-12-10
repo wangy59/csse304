@@ -18,7 +18,7 @@
 
 (define my-set?
   (lambda (a)
-    (if (null? a)
+    (if (and (null? a) (list? a))
         #t
         (if (contains? (car a) (cdr a))
             #f
