@@ -75,34 +75,88 @@
                              (list cur-sum final-max))))])
       (caadr (helper a)))))
                          
+(define atom?
+  (lambda (x)
+    (or (null? x)
+        (pair? x))))
+
+(define !atom?
+  (lambda (x)
+    (not (atom? x))))
 
 (define slist-map
-  (lambda (a b)
-    (nyi)))
+  (lambda (proc lst)
+    (cond [(null? lst) '()]
+          [else (let ([cur (car lst)])
+                  (cond [(atom? cur) (append (list (slist-map proc cur))
+                                             (slist-map proc (cdr lst)))]
+                        [else (append (list (proc cur))
+                                      (slist-map proc (cdr lst)))]))])))
 
 (define slist-reverse
-  (lambda (a)
-    (nyi)))
+  (lambda (lst)
+    (cond [(or (null? lst) (null? (cdr lst))) lst]
+          [else (let ([cur (car lst)])
+                  (cond [(atom? cur) (append (slist-reverse (cdr lst))
+                                             (list (slist-reverse cur)))]
+                        [else (append (slist-reverse (cdr lst))
+                                      (list cur))]))])))
 
 (define slist-paren-count
-  (lambda (a)
-    (nyi)))
+  (lambda (lst)
+    (cond [(null? lst) 2]
+          [(atom? (car lst)) (+ (slist-paren-count (car lst))
+                                (slist-paren-count (cdr lst)))]
+          [else (slist-paren-count (cdr lst))])))
 
 (define slist-depth
-  (lambda (a)
-    (nyi)))
+  (lambda (lst)
+    (letrec ([clean-lst (filter atom? lst)]
+             [greatest (lambda (lst)
+                         (cond [(null? lst) '()]
+                               [(null? (cdr lst)) (car lst)]
+                               [(> (car lst) (cadr lst)) (greatest (cons (car lst) (cddr lst)))]
+                               [else (greatest (cdr lst))]))])
+      (cond [(null? clean-lst) 1]
+            [else (+ 1 (greatest (map slist-depth clean-lst)))]))))
 
 (define slist-symbols-at-depth
-  (lambda (a b)
-    (nyi)))
+  (lambda (lst dep)
+    (let ([clean-lst (filter atom? lst)]
+          [clean-sym (filter !atom? lst)])
+      (cond [(= dep 1) clean-sym]
+            [(null? clean-lst) '()]
+            [else (apply append (map (lambda (lst) (slist-symbols-at-depth lst (sub1 dep))) clean-lst))]))))
 
 (define path-to
-  (lambda (a b)
-    (nyi)))
-
+  (lambda (lst sym)
+    (letrec ([last (lambda (lst)
+                     (if (null? (cdr lst))
+                         (car lst)
+                         (last (cdr lst))))]
+             [helper (lambda (lst)
+                       (cond [(null? lst) (list #f)]
+                             [(atom? (car lst)) (if (car (helper (car lst)))
+                                                    (cons 'car (helper (car lst)))
+                                                    (cons 'cdr (helper (cdr lst))))]
+                             [else (if (equal? (car lst) sym)
+                                       (list 'car)
+                                       (cons 'cdr (helper (cdr lst))))]))])
+      (if (equal? (last (helper lst)) #f)
+          #f
+          (helper lst)))))
+    
+ 
 (define make-c...r
   (lambda (str)
-    (nyi)))
+    (letrec ([str-lst (string->list str)]
+             [helper (lambda (l)
+                       (cond [(null? l) '()]
+                             [(equal? (car l) #\a) (cons car (helper (cdr l)))]
+                             [(equal? (car l) #\d) (cons cdr (helper (cdr l)))]
+                             [else 'error]))])
+      (apply compose1 (helper str-lst)))))
+      
 
 ;;--------  Used by the testing mechanism   ------------------
 
